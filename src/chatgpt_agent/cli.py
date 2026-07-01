@@ -8,7 +8,7 @@ from datetime import datetime, timezone
 
 import click
 
-from . import __version__, auth, chat, lock, paths, store, suite
+from . import __version__, auth, chat, lock, paths, store
 from .browser import Browser, BrowserError
 
 
@@ -238,67 +238,6 @@ def cmd_send(ctx: click.Context, session_id: str, message: str, model_slug: str,
         click.echo(reply.text)
     for img in reply.images:
         click.echo(f"[image] {img.path}", err=True)
-
-
-@main.command("suite")
-@click.argument("spec_path", type=click.Path(exists=True, dir_okay=False, readable=True))
-@click.option("--out", "output_dir", default=None, help="Output directory. Default: ./chatgpt-suite-<spec-name>")
-@click.option(
-    "--model", "model_slug", default="gpt-5-5-thinking", show_default=True,
-    help="Model slug. Image generation is expected to work on 'gpt-5-5-thinking'.",
-)
-@click.option(
-    "--effort", "thinking_effort", default="extended", show_default=True,
-    type=click.Choice(["standard", "extended"], case_sensitive=False),
-    help="Reasoning effort for thinking models.",
-)
-@click.option("--sleep-s", default=suite.DEFAULT_SLEEP_S, show_default=True, help="Seconds to pause between suite items.")
-@click.option("--continue-on-error", is_flag=True, help="Keep generating later items after one item fails.")
-@click.option("--dry-run", is_flag=True, help="Print the planned prompts without contacting ChatGPT.")
-@click.pass_context
-def cmd_suite(
-    ctx: click.Context,
-    spec_path: str,
-    output_dir: str | None,
-    model_slug: str,
-    thinking_effort: str,
-    sleep_s: float,
-    continue_on_error: bool,
-    dry_run: bool,
-) -> None:
-    """Generate a style-consistent image suite from a JSON spec."""
-    profile = ctx.obj["profile"]
-    try:
-        spec = suite.load_spec(spec_path)
-        if dry_run:
-            click.echo(json.dumps(suite.dry_run_plan(spec), ensure_ascii=False, indent=2))
-            return
-
-        if output_dir is None:
-            stem = os.path.splitext(os.path.basename(spec_path))[0]
-            output_dir = os.path.abspath(f"chatgpt-suite-{stem}")
-        with _with_lock(ctx, "suite"):
-            b = Browser(profile)
-            _require_login(b)
-            manifest = suite.run_suite(
-                b, profile, spec, output_dir,
-                model=model_slug,
-                thinking_effort=thinking_effort,
-                sleep_s=sleep_s,
-                continue_on_error=continue_on_error,
-            )
-    except lock.LockError as e:
-        _die(f"chatgpt-agent: {e}", code=11)
-    except BrowserError as e:
-        _die_browser_error(e)
-    except (OSError, ValueError, json.JSONDecodeError) as e:
-        _die(f"chatgpt-agent: {e}", code=64)
-
-    click.echo(manifest["manifest_path"])
-    click.echo(
-        f"generated {manifest['success_count']}/{manifest['total_count']} images in {manifest['conversation_id']}",
-        err=True,
-    )
 
 
 # ------------------------------------------------------------- tab control

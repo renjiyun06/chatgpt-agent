@@ -46,8 +46,6 @@ ID=$(chatgpt-agent new --initial "Create an outline for X" | head -1)
 chatgpt-agent send "$ID" "Expand the second section"
 
 chatgpt-agent dump "$ID" > history.json
-
-chatgpt-agent suite examples/suite.example.json --out ./out
 ```
 
 Use `chatgpt-agent --help` and `chatgpt-agent <command> --help` for the current
@@ -67,7 +65,7 @@ That means a profile such as `agent-a` usually inherits the default profile's
 ChatGPT login state and does not need a separate manual login:
 
 ```bash
-chatgpt-agent --profile agent-a suite ./suite.json --out ./out-a
+chatgpt-agent --profile agent-a new --initial "Generate a four-image product campaign set"
 ```
 
 If the default Chrome profile is currently running, it is closed before cloning
@@ -81,26 +79,19 @@ ChatGPT account, they still share that account's quota and anti-abuse limits.
 Profile names must be 1-64 characters from `A-Z`, `a-z`, `0-9`, `.`, `_`, `-`,
 and must start with a letter or digit.
 
-## Image Suites
+## Image Sets
 
-`chatgpt-agent suite` reads a JSON spec and generates all items in a single
-ChatGPT conversation so later images can reuse the visual system established by
-earlier images.
+ChatGPT can generate a coherent image set directly from one semantic prompt.
+Use `new` for the first request and keep the returned conversation id if you
+want to refine or extend the set with `send`.
 
-```json
-{
-  "series_name": "Launch visuals",
-  "master_brief": "A coherent product launch image suite",
-  "style": "clean studio photography, bright neutral lighting",
-  "negative": "no unreadable text, no cluttered backgrounds",
-  "items": [
-    {"name": "Hero", "brief": "main product hero image", "aspect": "16:9"},
-    {"name": "Square", "brief": "social media square version", "aspect": "1:1"}
-  ]
-}
+```bash
+ID=$(chatgpt-agent new --initial "Generate a coherent set of 4 square social images for a premium coffee brand: storefront hero, latte close-up, coffee bag still life, and morning takeaway lifestyle scene. Keep one visual system across all images." | head -1)
+chatgpt-agent send "$ID" "Generate 2 more images in the same visual system: pastry pairing and iced coffee."
 ```
 
-The output directory contains generated image files and `manifest.json`.
+Generated images are printed on stderr as `[image] <path>` and saved under the
+active profile's image cache.
 
 ## License
 
