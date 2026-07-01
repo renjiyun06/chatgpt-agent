@@ -1,0 +1,21 @@
+[project]
+name = "chatgpt-agent"
+version = "0.1.0"
+description = "CLI that drives the ChatGPT web interface via a persistent browser, exposing it as a session-oriented agent."
+readme = "README.md"
+license = { text = "MIT" }
+authors = [
+    { name = "renjiyun", email = "wozaijixu@gmail.com" }
+]
+requires-python = ">=3.12"
+dependencies = [
+    "click>=8.1",
+    "playwright==1.58.0",
+]
+
+[project.scripts]
+chatgpt-agent = "chatgpt_agent.cli:main"
+
+[build-system]
+requires = ["uv_build>=0.10.12,<0.11.0"]
+build-backend = "uv_build"

@@ -1,0 +1,36 @@
+# Python build / venv
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+build/
+dist/
+
+# IDE / editor
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+
+# Playwright CLI workdir
+.playwright-cli/
+
+# Experiments: keep the probe scripts (.py) and the public OpenAI
+# sentinel sources (.js / .html) — they document the methodology.
+# Exclude the captured JSON traces; they contain real Bearer tokens,
+# chat-requirements tokens, proof tokens, fingerprint payloads,
+# and conversation ids that must never leave the local cache.
+experiments/c-strict/*.json
+experiments/**/*.json
+# Also exclude binary test fixtures (imgen-generated upload samples,
+# screenshots) — they are trivially regenerable and bloat the repo.
+experiments/**/*.png
+experiments/**/*.jpg
+experiments/**/*.jpeg
+experiments/**/*.pdf
+
+# Local test/scratch dumps
+/tmp/
+*.log

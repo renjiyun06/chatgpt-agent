@@ -1,0 +1,18 @@
+{
+  "series_name": "Launch visuals",
+  "master_brief": "A coherent product launch image suite for a premium wearable device.",
+  "style": "clean studio photography, bright neutral lighting, restrained premium palette, crisp product focus",
+  "negative": "no unreadable text, no cluttered backgrounds, no distorted product shape",
+  "items": [
+    {
+      "name": "Hero",
+      "brief": "main product hero image on a clean surface with premium lighting",
+      "aspect": "16:9"
+    },
+    {
+      "name": "Social square",
+      "brief": "square social media image that keeps the same product styling",
+      "aspect": "1:1"
+    }
+  ]
+}
