@@ -161,6 +161,8 @@ chatgpt-agent --profile alice list
 
 Each profile has its own Chrome user-data-dir + cookies + conversation pool. Conversation ids are account-scoped — a `conv_id` from profile A won't resolve under profile B. Default profile is `default`.
 
+Use `default` as the base login profile. When a new non-default profile is opened for the first time, `chatgpt-agent` clones `default`'s Chrome user-data-dir into that profile before launching it, so the new profile usually inherits the existing ChatGPT login state. If `default` is currently running, it is closed before cloning to avoid copying a live Chrome profile.
+
 Profile names must be 1-64 chars from `A-Z`, `a-z`, `0-9`, `.`, `_`, `-`, and must start with a letter or digit.
 
 ## Cache locations

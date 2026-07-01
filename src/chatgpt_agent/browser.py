@@ -13,6 +13,9 @@ CDP port while running). The launcher writes the current pid + port into
 `~/.cache/chatgpt-agent/runtime/<profile>.session`; cookies and login
 state live separately under
 `~/.local/share/chatgpt-agent/profiles/<profile>/chrome`.
+New non-default profiles are cloned from the default profile's Chrome
+user-data-dir when possible, so a single default login can seed later
+per-agent profiles.
 
 Driver model: chatgpt-agent never simulates clicks, never types
 characters, never walks React fibers, never touches the composer
@@ -166,23 +169,51 @@ def _profile_has_live_chrome_lock(user_data_dir: str) -> bool:
     return _process_exists(pid)
 
 
+def _copy_profile_tree(source: str, target: str) -> bool:
+    if _profile_has_live_chrome_lock(source):
+        return False
+    os.makedirs(os.path.dirname(target), exist_ok=True)
+    try:
+        shutil.copytree(source, target, ignore=PROFILE_COPY_IGNORE)
+    except FileExistsError:
+        pass
+    except OSError:
+        return False
+    return True
+
+
+def _close_runtime_profile(profile: str) -> None:
+    """Close a running profile and remove its runtime file if present."""
+    pid = _read_direct_pid(profile)
+    if pid:
+        _terminate_pid(pid)
+    sf = _session_file(profile)
+    try:
+        os.remove(sf)
+    except OSError:
+        pass
+
+
 def _ensure_user_data_dir(profile: str, session: str) -> str:
-    """Return the stable Chrome profile dir, copying legacy data if safe."""
+    """Return the stable Chrome profile dir, cloning default when safe."""
     target = paths.chrome_user_data_dir(profile)
     if target.exists():
         return str(target)
 
+    if profile != "default":
+        default_dir = paths.chrome_user_data_dir("default")
+        if default_dir.exists():
+            # A Chrome profile must not be copied while Chrome has it open.
+            # If the default profile is currently running under our runtime,
+            # close it first, then clone the now-stable user-data-dir.
+            if _profile_has_live_chrome_lock(str(default_dir)):
+                _close_runtime_profile("default")
+            if _copy_profile_tree(str(default_dir), str(target)):
+                return str(target)
+
     for legacy in _legacy_user_data_dirs(session):
-        if _profile_has_live_chrome_lock(legacy):
-            continue
-        target.parent.mkdir(parents=True, exist_ok=True)
-        try:
-            shutil.copytree(legacy, target, ignore=PROFILE_COPY_IGNORE)
-        except FileExistsError:
-            pass
-        except OSError:
-            continue
-        return str(target)
+        if _copy_profile_tree(legacy, str(target)):
+            return str(target)
 
     target.mkdir(parents=True, exist_ok=True)
     return str(target)
@@ -295,15 +326,7 @@ class Browser:
         Safe to call when not running.
         """
         self._disconnect()
-        pid = _read_direct_pid(self.profile)
-        if pid:
-            _terminate_pid(pid)
-        sf = _session_file(self.profile)
-        if os.path.isfile(sf):
-            try:
-                os.remove(sf)
-            except OSError:
-                pass
+        _close_runtime_profile(self.profile)
 
     def _clear_stale_runtime(self) -> None:
         """Remove a stale runtime file before launching a fresh Chrome."""

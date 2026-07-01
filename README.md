@@ -55,13 +55,23 @@ command surface.
 
 ## Profiles And Concurrency
 
-The default profile is `default`. You can use additional profiles when multiple
-agents need isolated browser sessions:
+The default profile is `default`. Use it as the base login profile:
 
 ```bash
-chatgpt-agent --profile agent-a login
+chatgpt-agent login
+```
+
+When a new non-default profile is opened for the first time, `chatgpt-agent`
+clones the default Chrome user-data-dir into that profile before launching it.
+That means a profile such as `agent-a` usually inherits the default profile's
+ChatGPT login state and does not need a separate manual login:
+
+```bash
 chatgpt-agent --profile agent-a suite ./suite.json --out ./out-a
 ```
+
+If the default Chrome profile is currently running, it is closed before cloning
+so Chrome's profile files are copied from a stable state.
 
 Commands on the same profile are serialized with a file lock. Different
 profiles can run in parallel because they use different Chrome user-data
